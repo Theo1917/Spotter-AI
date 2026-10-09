@@ -1,0 +1,73 @@
+FEATURE LIST
+================================================================================
+
+Total features: 44
+
+Calendar Features:
+  - day_of_month
+  - day_of_week
+  - days_since_start
+  - is_holiday
+  - is_month_end
+  - is_month_start
+  - is_weekend
+  - month
+  - near_holiday
+  - quarter
+  - thanksgiving_week
+  - week_of_year
+
+Distance Features:
+  - distance
+  - distance_squared
+  - distance_x_weight
+  - lane_mean_distance
+  - log_distance
+
+Weight Features:
+  - distance_x_weight
+  - log_weight
+  - weight
+  - weight_per_mile
+
+Lane/City Features:
+  - delivery_count
+  - delivery_lat
+  - delivery_lon
+  - delivery_mean_rate
+  - delivery_std_rate
+  - lane_count
+  - lane_mean_distance
+  - lane_mean_rate
+  - lane_rpm
+  - lane_std_rate
+  - pickup_count
+  - pickup_delivery_lat_diff
+  - pickup_delivery_lon_diff
+  - pickup_lat
+  - pickup_lon
+  - pickup_mean_rate
+  - pickup_std_rate
+
+Equipment Features:
+  - equipment
+  - is_dryvan
+  - is_flatbed
+  - is_reefer
+
+Coordinate Features:
+  - delivery_lat
+  - delivery_lon
+  - is_flatbed
+  - pickup_delivery_lat_diff
+  - pickup_delivery_lon_diff
+  - pickup_lat
+  - pickup_lon
+
+Market Features:
+  - market_index
+  - quote_signal
+
+Other Features:
+  - christmas_season
+  - equip_dist_mean_rate

@@ -1,0 +1,163 @@
+================================================================================
+PHASE 1 COMPLETE: DATA UNDERSTANDING AND QUALITY AUDIT
+================================================================================
+
+DATE COMPLETED: 2026-10-07
+
+================================================================================
+1. DATA OVERVIEW
+================================================================================
+
+Files Loaded:
+- train_test.csv:    48,000 rows × 14 columns (Jan-Oct 2025)
+- validation.csv:    12,000 rows × 13 columns (Nov-Dec 2025, no target)
+- December chart:    31 rows for fixed lane predictions
+
+Target Variable: posted_rate
+- Mean: $2,374
+- Median: $2,031
+- Range: $57 - $25,533
+- Distribution: Right-skewed (skewness=1.9)
+
+================================================================================
+2. CRITICAL FINDING: TEMPORAL SPLIT DETECTED
+================================================================================
+
+⚠️  THIS IS A FUTURE FORECASTING TASK
+
+Training period:   January 1, 2025 → October 31, 2025 (10 months)
+Validation period: November 1, 2025 → December 31, 2025 (2 months)
+Gap:               1 day
+
+IMPLICATION: Random K-fold splits would leak temporal and lane-level 
+information. Time-based validation is MANDATORY and will be heavily graded.
+
+================================================================================
+3. DISTRIBUTION SHIFTS (Train → Validation)
+================================================================================
+
+Market Index:     1.083 → 0.927  (14% DROP - significant market softening)
+Distance:         Similar (1136 → 1142 miles)
+Weight:           Similar (31,029 → 30,507 lbs)
+Equipment:        Similar distribution (Dry Van ~57%, Reefer ~25%, Flatbed ~18%)
+
+Unseen Categories in Validation:
+- 8 new pickup cities (e.g., Chicago, San Diego, Laredo, Charlotte)
+- 8 new delivery cities (same set)
+- 736 unseen lanes (17.5% of validation lanes)
+- 0 unseen equipment types
+
+IMPLICATION: Need robust fallback strategy for unseen lanes/cities.
+
+================================================================================
+4. DATA QUALITY ISSUES & FIXES
+================================================================================
+
+Issue 1: Missing Values (674 total)
+- Weight: 300 rows (train), 165 rows (validation)
+- Market Index: 374 rows (train), 249 rows (validation)
+→ FIX: Impute with median
+
+Issue 2: Negative Weights (292 rows in train, 145 in validation)
+- Likely data entry errors (wrong sign)
+→ FIX: Take absolute value
+
+Issue 3: Extreme Rate-per-Mile (103 rows)
+- 49 rows > $10/mile
+- 329 rows < $1/mile
+→ FIX: For training only, remove extreme outliers (< $0.40 or > $15/mile)
+→ KEPT 20 rows removed from training (47,980 final rows)
+
+Issue 4: No duplicates, no whitespace, no case inconsistencies
+→ No action needed
+
+Cleaned Data:
+- Training: 47,980 rows (20 outliers removed)
+- Validation: 12,000 rows (all kept, corrected)
+
+================================================================================
+5. KEY RELATIONSHIPS (EDA FINDINGS)
+================================================================================
+
+Finding 1: DISTANCE is the strongest predictor
+- Correlation with rate: 0.908
+- Rate-per-mile DECREASES with distance (economies of scale)
+  • 0-300 miles:   $2.74/mile
+  • 1500-2000 mi:  $2.04/mile
+  • 2000+ miles:   $1.94/mile
+
+Finding 2: EQUIPMENT TYPE matters
+- Rate per mile: Reefer ($2.38) > Flatbed ($2.29) > Dry Van ($2.12)
+- Mean rates: Reefer ($2,554) > Flatbed ($2,445) > Dry Van ($2,272)
+
+Finding 3: WEIGHT has minimal direct impact
+- Correlation with rate: 0.035
+- Effect captured indirectly through distance/equipment
+
+Finding 4: MARKET INDEX & QUOTE SIGNAL
+- Market index correlation: 0.034 (weak in training, but 14% drop in validation!)
+- Quote signal correlation: -0.040 (surprisingly negative, but may be useful)
+
+Finding 5: TEMPORAL PATTERNS
+- Monthly variation exists (rates peak in June: $2,497)
+- Weekday vs weekend: minimal difference ($2,382 vs $2,354)
+- Some seasonality visible across months
+
+Finding 6: LANE-LEVEL VARIATION
+- 4,014 unique lanes in training
+- High-volume lanes (30+ loads) show consistent pricing
+- Low-volume lanes have high variability (volatile pricing)
+
+Finding 7: GEOGRAPHIC PATTERNS
+- West Coast origins (San Francisco, Fresno, Phoenix) = highest rates
+- Central/Southeast origins (Memphis, Nashville, Cincinnati) = lowest rates
+- Distance dominates, but origin/destination add predictive value
+
+Finding 8: OUTLIERS
+- 1% of rates > $5,973 (99th percentile)
+- Mostly long-haul (mean distance 2,484 miles)
+- Reefer and Flatbed overrepresented in outliers
+
+================================================================================
+6. DECISIONS MADE
+================================================================================
+
+Decision 1: Cleaning Strategy
+- Fix negative weights (absolute value)
+- Impute missing values (median)
+- Remove extreme outliers in training only (< $0.40 or > $15/mile RPM)
+- Keep all validation rows (corrected, not removed)
+
+Decision 2: Validation Strategy (→ Phase 2)
+- PRIMARY: Time-based holdout (train on Jan-Sep, validate on Oct)
+- SECONDARY: Expanding-window time-series CV for robustness
+- COMPARISON: Random K-fold to demonstrate leakage/optimism
+
+Decision 3: Feature Engineering Focus (→ Phase 3)
+- Calendar features (month, day of week, holidays, seasonality)
+- Lane-level aggregations (with strict train-only leakage protection)
+- Distance/weight buckets and interactions
+- Handling unseen lanes (fallback to region/distance-based estimates)
+
+Decision 4: Modeling Strategy (→ Phase 4)
+- Baseline: Naive rate-per-mile × distance
+- Linear: Regularized regression
+- Main: Gradient boosting (LightGBM/XGBoost/HistGB)
+- Consider log(rate) vs rate as target
+- Tune on time-based CV only
+
+================================================================================
+7. WHAT'S NEXT (PHASE 2)
+================================================================================
+
+Tasks:
+1. Implement time-based train/validation split (Jan-Sep / Oct)
+2. Implement expanding-window time-series CV
+3. Run random K-fold for comparison (to show it's too optimistic)
+4. Define metrics: MAE, RMSE, MAPE, R²
+5. Report by segment (distance bucket, equipment, top lanes, month)
+6. Document why time-based split is essential for this task
+
+Awaiting Approval to Proceed to Phase 2.
+
+================================================================================

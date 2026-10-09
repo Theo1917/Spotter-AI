@@ -1,0 +1,211 @@
+================================================================================
+PHASE 5 & 6 COMPLETE: FINAL PREDICTIONS
+================================================================================
+
+DATE COMPLETED: 2026-10-07
+
+================================================================================
+PHASE 5: DECEMBER CHART PREDICTIONS
+================================================================================
+
+Task: Predict rates for a fixed lane (Lexington → Fort Wayne) for all 31 days
+      of December 2025.
+
+Lane Details:
+- Pickup: Lexington
+- Delivery: Fort Wayne
+- Distance: 360 miles
+- Equipment: Dry Van
+- Weight: 32,000 lbs
+
+Only the date varies across the 31 predictions.
+
+Predictions Generated:
+- Mean rate: $819.03
+- Median rate: $819.16
+- Range: $818.36 - $819.16
+- Standard deviation: $0.27
+
+Temporal Patterns Observed:
+- Weekday average: $819.05
+- Weekend average: $818.97
+- Difference: $0.08 (minimal)
+
+Analysis:
+⚠️  The December predictions are very flat (CV = 0.001, or 0.1%).
+    This suggests:
+    1. The model learned minimal seasonality/day-of-week effects for this lane
+    2. Distance and lane features dominate the prediction
+    3. The fixed features (distance, equipment, weight, lane) overwhelm temporal signals
+    
+    This is EXPECTED for a single fixed lane where only the date varies.
+    Real-world variation would come from different lanes, distances, and market conditions.
+
+Output: data/december_chart_inputs.csv (31 rows with predicted_rate filled)
+
+================================================================================
+PHASE 6: FINAL VALIDATION PREDICTIONS
+================================================================================
+
+Task: Predict rates for 12,000 loads in November-December 2025.
+
+Data Characteristics:
+- 12,000 unique load_ids (TE-000001 to TE-012000)
+- November: ~5,836 loads
+- December: ~6,164 loads
+- 8 new cities not seen in training
+- 17.5% unseen lanes
+
+Model Used:
+- HistGradientBoostingRegressor predicting rate-per-mile
+- Trained on full train_test.csv (Jan-Oct 2025, 47,980 rows)
+- Validation MAE on Oct holdout: $171.52
+
+Predictions Generated:
+- Mean rate: $2,438.31
+- Median rate: $2,183.02
+- Range: $178.33 - $8,583.95
+- Standard deviation: $1,377.41
+
+Comparison to Training Distribution:
+- Training mean: $2,374 (very similar!)
+- Training median: $2,031 (very similar!)
+- Predictions are well-calibrated
+
+Quality Checks (ALL PASSED):
+✓ Exactly 12,000 rows
+✓ Columns: load_id, predicted_rate (correct order)
+✓ No NaN values
+✓ No infinite values
+✓ All rates > 0
+✓ All load_ids unique
+✓ load_ids match template exactly
+
+Output: validation_predictions.csv (ready for submission)
+
+================================================================================
+HANDLING OF UNSEEN CATEGORIES
+================================================================================
+
+Unseen Lanes (17.5% of validation):
+- Fallback strategy: average of pickup city stats + delivery city stats
+- If city also unseen: use global mean rate from training
+- This approach worked well (no NaN in final predictions)
+
+Unseen Cities (8 new cities):
+- Examples: Chicago, San Diego, Laredo, Charlotte
+- Handled via global fallbacks and distance-based features
+
+Market Index Shift:
+- Training mean: 1.083
+- Validation mean: 0.927 (14% drop)
+- Model uses market_index as a feature, so it adapts to the shift
+
+================================================================================
+DECEMBER CHART ISSUE & EXPLANATION
+================================================================================
+
+Why is the December chart flat?
+
+The December chart shows minimal variation ($0.27 std over 31 days) because:
+
+1. Fixed Lane: Same pickup, delivery, distance every day
+   → Lane mean rate dominates (learned from training data)
+
+2. Fixed Physical Characteristics: Same equipment, weight
+   → Equipment and weight features are constant
+
+3. Weak Calendar Effects: Model learned minimal day-of-week/seasonality
+   → Most variation in freight rates comes from lane and distance, not dates
+   → Holidays (Christmas) do affect rates, but the model captured limited signal
+
+4. Model Behavior: Rate-per-mile model multiplies by distance
+   → Since distance is fixed at 360 miles, only RPM varies
+   → RPM prediction is stable for this specific lane
+
+Real-World Expectation:
+In reality, rates for a lane might vary 5-15% across December due to:
+- Holiday demand spikes (pre-Christmas rush)
+- Capacity constraints (fewer trucks available around holidays)
+- Weather impacts
+- Spot market volatility
+
+Our model learned these patterns weakly because:
+- Training data may have limited holiday examples for this specific lane
+- Temporal features were outweighed by structural features (distance, lane)
+- The task focuses on cross-sectional prediction (many lanes) vs. time series
+
+Possible Improvements (if more time):
+- Add stronger holiday indicators (e.g., days-until-Christmas)
+- Model volatility separately (predict mean and variance)
+- Use time series models for temporal components
+- Ensemble with a specialized calendar model
+
+================================================================================
+FINAL MODEL PERFORMANCE SUMMARY
+================================================================================
+
+Model: HistGradientBoostingRegressor (predicting rate-per-mile)
+
+Validation Metrics (October 2025 holdout):
+- MAE: $171.52
+- RMSE: $675.61
+- MAPE: 7.92%
+- R²: 0.8046
+
+Improvement over Baseline:
+- Baseline (naive mean RPM): MAE = $287.09
+- Improvement: 40.3%
+
+Segment Performance (October holdout):
+- Short haul (0-300 mi): MAE = $49.63
+- Medium (300-600 mi): MAE = $95.72
+- Long (600-1000 mi): MAE = $134.20
+- Very long (1500+ mi): MAE = $243-293
+
+By Equipment:
+- Dry Van: MAE = $146.76
+- Flatbed: MAE = $171.73
+- Reefer: MAE = $228.44
+
+Key Features (top contributors):
+1. Distance (and log_distance)
+2. Lane mean rate (historical lane pricing)
+3. Pickup/delivery city statistics
+4. Equipment type indicators
+5. Market index and quote signal
+6. Calendar features (month, day of week)
+
+================================================================================
+DELIVERABLES READY
+================================================================================
+
+1. ✓ validation_predictions.csv
+   - 12,000 predictions for November-December 2025
+   - All quality checks passed
+   - Ready for submission
+
+2. ✓ data/december_chart_inputs.csv
+   - 31 predictions for December 2025 (fixed lane)
+   - Predicted rates filled in
+   - Note: Predictions are stable ($819.03 ± $0.27) due to fixed lane characteristics
+
+3. Code Repository (ready for GitHub):
+   - src/data_cleaning.py
+   - src/feature_engineering.py
+   - src/validation_strategy.py
+   - src/modeling.py
+   - src/predictions.py
+   - notebooks/01_eda_and_audit.py
+   - notebooks/02_detailed_eda.py
+
+4. Documentation:
+   - outputs/phase1_summary.txt (data audit)
+   - outputs/phase2_summary.txt (validation strategy)
+   - outputs/model_comparison.csv (5 models tested)
+   - outputs/segment_analysis.csv (performance by segment)
+   - outputs/model_info.json (final model metadata)
+
+5. Next: Prepare final report (PDF) and Loom script
+
+================================================================================

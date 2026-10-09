@@ -1,0 +1,31 @@
+================================================================================
+PHASE 2: VALIDATION STRATEGY
+================================================================================
+
+
+Primary Validation:
+  - Time-based holdout (Jan-Sep train / Oct validation)
+  - Training: 43,129 rows, 9 months
+  - Validation: 4,851 rows, 1 month
+  - Mimics the real task: forecast 1-2 months ahead
+
+Time-Series CV:
+  - 3 folds with expanding window
+  - Each fold: train on more history, validate on next month
+  - Used for robustness checks and hyperparameter tuning
+
+Random K-Fold:
+  - 5 folds for comparison only
+  - Shows temporal leakage (train/val dates overlap)
+  - Expected to be overly optimistic
+  - Used in report to justify time-based approach
+
+Metrics:
+  - Primary: MAE (mean absolute error in dollars)
+  - Secondary: RMSE, MAPE, R²
+  - Segment analysis by distance, equipment, month
+
+Final Model Training:
+  - After validation, retrain on ALL train_test.csv data (Jan-Oct)
+  - Predict on validation.csv (Nov-Dec)
+  - This matches the submission requirement

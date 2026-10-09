@@ -1,0 +1,6 @@
+fold,train_size,val_size,temporal_overlap_days,future_in_train
+1,38384,9596,304,False
+2,38384,9596,304,False
+3,38384,9596,304,False
+4,38384,9596,304,False
+5,38384,9596,304,False
